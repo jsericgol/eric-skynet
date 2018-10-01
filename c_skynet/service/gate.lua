@@ -22,7 +22,7 @@ function handler.open(source, conf)
 end
 
 function handler.message(fd, msg, sz)
-    skynet.error("-------gate.lua=>handler.message")
+    skynet.error("-------gate.lua=>handler.message,fd=", fd)
 	-- recv a package, forward it
 	local c = connection[fd]
 	local agent = c.agent
@@ -36,7 +36,7 @@ function handler.message(fd, msg, sz)
         skynet.error("===== gate.lua=>handler.message: before skynet.redirect," .. str .. str2)
 		skynet.redirect(agent, c.client, "client", fd, msg, sz)
 	else
-        skynet.error("===== gate.lua=>handler.message: before skynet.send")
+        skynet.error("xxxxxxxx gate.lua=>handler.message: before skynet.send")
 		skynet.send(watchdog, "lua", "socket", "data", fd, skynet.tostring(msg, sz))
 		-- skynet.tostring will copy msg to a string, so we must free msg here.
 		skynet.trash(msg,sz)
@@ -55,7 +55,7 @@ function handler.connect(fd, addr)
 end
 
 local function unforward(c)
-    print("--------gate.lua=> unforward")
+    skynet.error("--------gate.lua=> unforward")
 	if c.agent then
 		forwarding[c.agent] = nil
 		c.agent = nil
@@ -64,7 +64,7 @@ local function unforward(c)
 end
 
 local function close_fd(fd)
-    print("--------gate.lua=> close_fd")
+    skynet.error("--------gate.lua=> close_fd, fd=", fd)
 	local c = connection[fd]
 	if c then
 		unforward(c)
@@ -73,9 +73,10 @@ local function close_fd(fd)
 end
 
 function handler.disconnect(fd)
-    print("--------gate.lua=> handler.disconnect")
+    skynet.error("--------gate.lua=> handler.disconnect,fd=",fd)
 	close_fd(fd)
 	skynet.send(watchdog, "lua", "socket", "close", fd)
+    skynet.error("--------gate.lua=> handler.disconnect: after send watchdog")
 end
 
 function handler.error(fd, msg)
@@ -92,7 +93,9 @@ end
 local CMD = {}
 
 function CMD.forward(source, fd, client, address)
-    print("--------gate.lua=> CMD.forward")
+    local str = string.format("source=%s, fd=%d, client=%s, address=%s",
+                              source, fd, client, address)
+    skynet.error("--------gate.lua=> CMD.forward:" .. str)
 	local c = assert(connection[fd])
 	unforward(c)
 	c.client = client or 0
@@ -102,19 +105,21 @@ function CMD.forward(source, fd, client, address)
 end
 
 function CMD.accept(source, fd)
-    print("--------gate.lua=> CMD.accept")
+    skynet.error("--------gate.lua=> CMD.accept")
 	local c = assert(connection[fd])
 	unforward(c)
 	gateserver.openclient(fd)
 end
 
 function CMD.kick(source, fd)
-    print("--------gate.lua=> CMD.kick")
+    local str = string.format("source=%s, fd=%s", source, fd)
+    skynet.error("--------gate.lua=> CMD.kick:" .. str)
 	gateserver.closeclient(fd)
 end
 
 function handler.command(cmd, source, ...)
-    print("--------gate.lua=> handler.command")
+    local str = string.format("cmd=%s,source=%s", cmd, source)
+    skynet.error("--------gate.lua=> handler.command: " .. str)
 	local f = assert(CMD[cmd])
 	return f(source, ...)
 end

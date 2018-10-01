@@ -14,17 +14,21 @@ function SOCKET.open(fd, addr)
 end
 
 local function close_agent(fd)
+    skynet.error("watchdog.lua=>close_agent: fd=", fd)
 	local a = agent[fd]
 	agent[fd] = nil
 	if a then
+        skynet.error("watchdog.lua=>close_agent: before call gate, fd=", fd)
 		skynet.call(gate, "lua", "kick", fd)
-		-- disconnect never return
+        -- disconnect never return
+
+        skynet.error("watchdog.lua=>close_agent: after call gate, before send agent fd=", fd)
 		skynet.send(a, "lua", "disconnect")
 	end
 end
 
 function SOCKET.close(fd)
-	print("socket close",fd)
+	skynet.error("watchdog.lua=> socket close",fd)
 	close_agent(fd)
 end
 

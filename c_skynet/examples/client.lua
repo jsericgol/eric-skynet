@@ -13,13 +13,15 @@ local proto = require "proto"
 local sproto = require "sproto"
 
 local host = sproto.new(proto.s2c):host "package"
+
+--生成一个函数，用于将c2s消息打包成数据包
 local request = host:attach(sproto.new(proto.c2s))
 
 print("before connect")
 local fd = assert(socket.connect("127.0.0.1", 8888))
 print("fd=", fd)
 
---[[local function send_package(fd, pack)
+local function send_package(fd, pack)
 	local package = string.pack(">s2", pack)
 	socket.send(fd, package)
 end
@@ -60,13 +62,15 @@ local function send_request(name, args)
 	session = session + 1
 	local str = request(name, args, session)
 	send_package(fd, str)
-	print("Request:", session)
+    local myStr = string.format("fd=%d,session=%d,name=%s",
+                                fd, session, name)
+	print("send_request:" .. myStr)
 end
 
 local last = ""
 
 local function print_request(name, args)
-	print("REQUEST:", name)
+	print("NOTIFY:", name)
 	if args then
 		for k,v in pairs(args) do
 			print(k,v)
@@ -103,9 +107,9 @@ local function dispatch_package()
 
 		print_package(host:dispatch(v))
 	end
-end]]
+end
 
---[[send_request("handshake")
+send_request("handshake")
 send_request("set", { what = "hello", value = "world"})
 while true do
 	dispatch_package()
@@ -119,4 +123,4 @@ while true do
 	else
 		socket.usleep(100)
 	end
-end]]
+end

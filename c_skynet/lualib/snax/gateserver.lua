@@ -21,7 +21,7 @@ function gateserver.openclient(fd)
 end
 
 function gateserver.closeclient(fd)
-	print("-----gateserver.closeclient:  fd=", fd)
+	skynet.error("-----gateserver.closeclient:  fd=", fd)
 	local c = connection[fd]
 	if c then
 		connection[fd] = false
@@ -57,6 +57,7 @@ function gateserver.start(handler)
 	end
 
 	function CMD.close()
+		skynet.error("gateserver.lua=>CMD.close")
 		assert(socket)
 		socketdriver.close(socket)
 	end
@@ -107,6 +108,7 @@ function gateserver.start(handler)
 	end
 
 	local function close_fd(fd)
+		skynet.error("gateserver.lua=>close_fd, fd=", fd)
 		local c = connection[fd]
 		if c ~= nil then
 			connection[fd] = nil
@@ -115,8 +117,10 @@ function gateserver.start(handler)
 	end
 
 	function MSG.close(fd)
+		skynet.error("gateserver.lua=>MSG.close, fd=", fd)
 		if fd ~= socket then
 			if handler.disconnect then
+				skynet.error("gateserver.lua=>MSG.close : before handler.disconnect")
 				handler.disconnect(fd)
 			end
 			close_fd(fd)
@@ -126,6 +130,7 @@ function gateserver.start(handler)
 	end
 
 	function MSG.error(fd, msg)
+		skynet.error("gateserver.lua=>MSG.error, fd=", fd)
 		if fd == socket then
 			socketdriver.close(fd)
 			skynet.error("gateserver close listen socket, accpet error:",msg)
@@ -161,11 +166,14 @@ function gateserver.start(handler)
 	skynet.start(function()
 		skynet.error("====gateserver.lua=>skynet.start")
 		skynet.dispatch("lua", function (_, address, cmd, ...)
-			skynet.error("====gateserver.lua=>skynet.dispatch")
+			local str = string.format("address=%s, cmd=%s", address, cmd)
+			skynet.error("====gateserver.lua=>skynet.dispatch: " .. str)
 			local f = CMD[cmd]
 			if f then
+				skynet.error("====gateserver.lua=>skynet.dispatch  11111")
 				skynet.ret(skynet.pack(f(address, ...)))
 			else
+				skynet.error("====gateserver.lua=>skynet.dispatch  22222")
 				skynet.ret(skynet.pack(handler.command(cmd, address, ...)))
 			end
 		end)
